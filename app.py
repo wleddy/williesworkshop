@@ -125,9 +125,7 @@ def _before():
     #  the non-table based items in the main menu
     g.menu_items = [
         {'title':'Home','url':url_for('www.home')},
-        {'title':'About','url':url_for('www.about')},
-        {'title':'Contact Us','url':url_for('www.contact')},
-        {'title':'Docs','url':url_for('www.docs')},
+        {'title':'Contact Me','url':url_for('www.contact')},
         ]
         
     # g.admin items are added to the navigation menu by default
