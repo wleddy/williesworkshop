@@ -4,11 +4,16 @@
 
 ### Computer Stuff
 
-#### jumpstat
-[jumpstat](https://jumpstat.williesworkshop.net) is a site I've been working on lately. 
+#### Micro Python stuff
 
-It collects data about the Jump Bike electric bike share system in Sacramento and tries to give
-a little insight into how many bikes are on the system and how they're used.
+I've started messing around with [Micropython](https://micropython.org). I've used it with the ESP23 microprocessors
+but currently I'm more interested in using the [Raspberry Pi Pico W](https://raspberrypi.com). The ESP32 is swell and all 
+but there are so many versions of the boards from different manufacturers that I've started projects on a board but then
+can't get more of the same board and the pin-outs are all different.
+
+My most recent project is a temperature display unit that I called (rather grandly) Weather Station. It turned out to
+be a much less ambitious project in the end. I did have my first professionally produced PCB made for it, so that's
+something new... It's all on [Github](https://github.com/wleddy/weather_station)
 
 #### Shotglass2 web site starter
 Shotglass2 is my second version of a web site starter kit I made up and put on [github](https://github.com/wleddy/shotglass2/). I
@@ -21,7 +26,7 @@ I made this site with it. Basically able to put up a site in 5 minutes.
 Shotglass2 adds the ability to host multiple sites from the same installation. It's also easier to override the layout of the basic
 Shotglass2 site without modifying the underlying code.
 
-It also has a much nicer mobile responsive layout using the w3.css library from [w3schools.com](http://w3schools.com/w3css/)
+It also has a nice mobile responsive layout using the w3.css library from [w3schools.com](http://w3schools.com/w3css/)
 
 #### Inventory System
 
