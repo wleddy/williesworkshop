@@ -57,16 +57,6 @@ def initalize_all_tables(db=None):
     ### setup any other tables you need here....
     
     
-def initalize_all_tables(db=None):
-    """Place code here as needed to initialze all the tables for this site"""
-    if not db:
-        db = get_db()
-    
-    shotglass.initalize_user_tables(db)
-
-    ### setup any other tables you need here....
-    # Starter(db).init_table()
-
 def get_db(filespec=None):
     """Return a connection to the database.
 
