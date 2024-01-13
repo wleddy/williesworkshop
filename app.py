@@ -1,4 +1,4 @@
-from flask import g, session, request, redirect, flash, abort, url_for, session
+from flask import g, session, request, redirect, abort, url_for
 import os
 from shotglass2 import shotglass
 from shotglass2.takeabeltof.database import Database
@@ -9,54 +9,45 @@ from shotglass2.users.models import User
 
 # Create app
 import logging 
-try:
-    app = shotglass.create_app(
-            __name__,
-            instance_path='instance',
-            config_filename='site_settings.py',
-            static_folder=None,
-            )
-except:
-    logging.exception('')
-    
-    
-@app.before_first_request
+
+app = shotglass.create_app(
+        __name__,
+        instance_path='instance',
+        config_filename='site_settings.py',
+        static_folder=None,
+        )
+        
 def start_app():
     shotglass.start_logging(app)
-    get_db() # ensure that the database file exists
-    # shotglass.start_backup_thread(os.path.join(app.root_path,app.config['DATABASE_PATH']))
+    initalize_base_tables()
+    ## Setup the routes for users
+    shotglass.register_users(app)
+
+    # setup www.routes...
+    shotglass.register_www(app)
+
+    app.register_blueprint(tools.mod)
+    
+    register_blueprints() # Register all the other bluepints for the app
+
     # use os.path.normpath to resolve true path to data file when using '../' shorthand
-    shotglass.start_backup_thread(os.path.normpath(os.path.join(app.root_path,shotglass.get_site_config()['DATABASE_PATH'])))
+    shotglass.start_backup_thread(
+        os.path.normpath(
+            os.path.join(
+                app.root_path,shotglass.get_site_config()['DATABASE_PATH']
+                )
+            )
+        )
+
 
 @app.context_processor
 def inject_site_config():
     # Add 'site_config' dict to template context
     return {'site_config':shotglass.get_site_config()}
 
-# # Depricated and removed in Flask 1.0
-# # work around some web servers that mess up root path
-# from werkzeug.contrib.fixers import CGIRootFix
-# if app.config['CGI_ROOT_FIX_APPLY'] == True:
-#     fixPath = app.config.get("CGI_ROOT_FIX_PATH","/")
-#     app.wsgi_app = CGIRootFix(app.wsgi_app, app_root=fixPath)
-
 register_jinja_filters(app)
 
 
-def init_db(db=None):
-    # to support old code
-    initalize_all_tables(db)
-
-def initalize_all_tables(db=None):
-    """Place code here as needed to initialze all the tables for this site"""
-    if not db:
-        db = get_db()
-        
-    shotglass.initalize_user_tables(db)
-    
-    ### setup any other tables you need here....
-    
-    
 def get_db(filespec=None):
     """Return a connection to the database.
 
@@ -72,7 +63,7 @@ def get_db(filespec=None):
     # test the path, if not found, try to create it
     if shotglass.make_db_path(filespec):
         g.db = Database(filespec).connect()
-        initalize_all_tables(g.db)
+        initalize_base_tables(g.db)
     
         return g.db
     else:
@@ -110,6 +101,20 @@ def _before():
     if 'user' in session:
         g.user = session['user']
         
+    create_menus()
+        
+        
+def create_menus():
+    """Create g.menu_items and g.admin objects.
+    
+    g.menu_items is a list of dicts that define the unprotected menu items. 
+    They will be displayed to all visitors at the top (or left) of the menus.
+    
+    g.admin defines menu items that require a user logged in with at certain level
+    of privilege.
+    
+    The order in which they are defined is the order in which they are displayed.
+    """
     # g.menu_items should be a list of dicts
     #  with keys of 'title' & 'url' used to construct
     #  the non-table based items in the main menu
@@ -154,6 +159,30 @@ def page_not_found(error):
 def server_error(error):
     return shotglass.server_error(error)
 
+
+def initalize_base_tables(db=None):
+    """Place code here as needed to initialze all the tables for this site"""
+    if not db:
+        db = get_db()
+    
+    shotglass.initalize_user_tables(db)
+
+    # ### setup any other tables you need here....
+    # import starter_module.models
+    # starter_module.models.init_db(db)
+    
+def register_blueprints():
+    """Register all your blueprints here and initialize 
+    any data tables they need.
+    """
+    # # add app specific modules...
+    # from starter_module.models import init_db as starter_init
+    # starter_init(g.db) #initialize the tables for the module
+    # from starter_module.views import starter
+    # app.register_blueprint(starter.mod)
+    # # update function 'create_menus' to display menu items for the app
+
+
 #Register the static route
 app.add_url_rule('/static/<path:filename>','static',shotglass.static)
 
@@ -162,25 +191,12 @@ app.add_url_rule('/static/<path:filename>','static',shotglass.static)
 #app.add_url_rule('/static/<path:filename>','static',shotglass.static,subdomain="somesubdomain")
 
 
-## Setup the routes for users
-shotglass.register_users(app)
+with app.app_context():
+    start_app()
 
-# setup www.routes...
-shotglass.register_www(app)
-
-app.register_blueprint(tools.mod)
-
-# # add more modules...
-# from starter_module.views import starter
-# app.register_blueprint(starter.mod)
 
 if __name__ == '__main__':
-    
-    with app.app_context():
-        # create the default database if needed
-        initalize_all_tables()
-        
-    app.run(host='localhost', port=5000)
+    app.run(host='127.0.0.1', port=5000)
     #app.run()
     
     

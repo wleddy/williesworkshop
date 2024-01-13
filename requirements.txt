@@ -1,6 +1,6 @@
 Flask
+MarkupSafe
 mistune
-namedlist
 Pillow
 pytest
 pytz
