@@ -1,12 +1,13 @@
-from flask import g, session, request, redirect, abort, url_for
+from flask import g, session, request, redirect, abort, url_for, render_template, flash
 import os
 from shotglass2 import shotglass
 from shotglass2.takeabeltof.database import Database
 from shotglass2.takeabeltof.jinja_filters import register_jinja_filters
+from shotglass2.takeabeltof.utils import cleanRecordID
 from shotglass2.tools.views import tools
 from shotglass2.users.admin import Admin
 from shotglass2.users.models import User
-from shotglass2.users.views import user
+from shotglass2.users.views import user, login
 
 # Create app
 import logging 
@@ -96,11 +97,12 @@ def _before():
     is_admin = False
     if 'user_id' in session and 'user' in session:
         # Refresh the user session
-        setUserStatus(session['user'],cleanRecordID(session['user_id']))
+        login.setUserStatus(session['user'],cleanRecordID(session['user_id']))
         is_admin = User(g.db).is_admin(session['user_id'])
 
     # if site is down and user is not admin, stop them here.
     # will allow an admin user to log in
+    from shotglass2.users.models import Pref
     down = Pref(g.db).get("Site Down Till",
                         user_name=shotglass.get_site_config().get("HOST_NAME"),
                         default='',
