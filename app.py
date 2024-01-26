@@ -6,6 +6,7 @@ from shotglass2.takeabeltof.jinja_filters import register_jinja_filters
 from shotglass2.tools.views import tools
 from shotglass2.users.admin import Admin
 from shotglass2.users.models import User
+from shotglass2.users.views import user
 
 # Create app
 import logging 
@@ -18,17 +19,16 @@ app = shotglass.create_app(
         )
         
 def start_app():
+    """
+    start_app
+
+    This is the start for a normal app. Initializes the User related
+    Tables in the Database.
+    """
     shotglass.start_logging(app)
     initalize_base_tables()
-    ## Setup the routes for users
-    shotglass.register_users(app)
-
-    # setup www.routes...
-    shotglass.register_www(app)
-
-    app.register_blueprint(tools.mod)
-    
-    register_blueprints() # Register all the other bluepints for the app
+    register_jinja_filters(app)
+    register_blueprints() # Register all the bluepints for the app
 
     # use os.path.normpath to resolve true path to data file when using '../' shorthand
     shotglass.start_backup_thread(
@@ -44,8 +44,6 @@ def start_app():
 def inject_site_config():
     # Add 'site_config' dict to template context
     return {'site_config':shotglass.get_site_config()}
-
-register_jinja_filters(app)
 
 
 def get_db(filespec=None):
@@ -71,11 +69,6 @@ def get_db(filespec=None):
         raise IOError("Unable to create path to () in app.get_db".format(filespec))
 
     
-@app.context_processor
-def inject_site_config():
-    # Add 'site_config' dict to template context
-    return {'site_config':shotglass.get_site_config()}
-
 
 @app.before_request
 def _before():
@@ -86,23 +79,51 @@ def _before():
     #ensure that nothing is served from the instance directory
     if 'instance' in request.url:
         return abort(404)
-        
-    # import pdb;pdb.set_trace()
-    # print(app.url_map)
+            
+    if 'static' in request.url:
+        return
+    
     session.permanent = True
     
-    shotglass.get_site_config(app)
     shotglass.set_template_dirs(app)
-    
     get_db()
     
+    # load the saved visit_data into session
+    shotglass._before_request(g.db)
+
     # Is the user signed in?
     g.user = None
-    if 'user' in session:
-        g.user = session['user']
-        
+    is_admin = False
+    if 'user_id' in session and 'user' in session:
+        # Refresh the user session
+        setUserStatus(session['user'],cleanRecordID(session['user_id']))
+        is_admin = User(g.db).is_admin(session['user_id'])
+
+    # if site is down and user is not admin, stop them here.
+    # will allow an admin user to log in
+    down = Pref(g.db).get("Site Down Till",
+                        user_name=shotglass.get_site_config().get("HOST_NAME"),
+                        default='',
+                        description = 'Enter something that looks like a date or time. It will be displayed to visitors and make the site inaccessable. Delete the value to allow access again.',
+                        )
+    if down and down.value.strip():
+        if not is_admin:
+            # log the user out...
+            from shotglass2.users.views import login
+            if g.user:
+                login.logout()
+
+            # this will allow an admin to log in.
+            if request.url.endswith(url_for('login.login')):
+                return login.login()
+            
+            g.title = "Sorry"
+            return render_template('site_down.html',down_till = down.value.strip())
+        else:
+            flash("The Site is in Maintenance Mode. Changes may be lost...",category='warning')
+
     create_menus()
-        
+
         
 def create_menus():
     """Create g.menu_items and g.admin objects.
@@ -143,7 +164,7 @@ def create_menus():
         )
     
     
-    shotglass.user_setup() # g.admin now holds access rules Users, Prefs and Roles
+    user.create_menus() # g.admin now holds access rules Users, Prefs and Roles
 
 @app.teardown_request
 def _teardown(exception):
@@ -163,9 +184,9 @@ def server_error(error):
 def initalize_base_tables(db=None):
     """Place code here as needed to initialze all the tables for this site"""
     if not db:
-        db = get_db()
+        get_db()
     
-    shotglass.initalize_user_tables(db)
+    user.initalize_tables(g.db)
 
     # ### setup any other tables you need here....
     # import starter_module.models
@@ -175,13 +196,22 @@ def register_blueprints():
     """Register all your blueprints here and initialize 
     any data tables they need.
     """
+    ## Setup the routes for users
+    user.register_blueprints(app)
+    
+    # setup www.routes...
+    shotglass.register_www(app)
+
+    app.register_blueprint(tools.mod)
+    
     # # add app specific modules...
     # from starter_module.models import init_db as starter_init
     # starter_init(g.db) #initialize the tables for the module
     # from starter_module.views import starter
     # app.register_blueprint(starter.mod)
     # # update function 'create_menus' to display menu items for the app
-
+    # print(app.bluepints)
+    
 
 #Register the static route
 app.add_url_rule('/static/<path:filename>','static',shotglass.static)
