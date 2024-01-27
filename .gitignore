@@ -13,6 +13,7 @@ robots.txt
 ## The User repo has it's own master
 users/
 shotglass2/
+travel_log/
 
 ## Passenger uses this
 tmp/
