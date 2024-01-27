@@ -7,10 +7,10 @@ from shotglass2.takeabeltof.utils import cleanRecordID
 from shotglass2.tools.views import tools
 from shotglass2.users.admin import Admin
 from shotglass2.users.models import User
-from shotglass2.users.views import user, login
+from shotglass2.users.views import user
+from shotglass2.users.views.login import setUserStatus
+from travel_log.views import trip
 
-# Create app
-import logging 
 
 app = shotglass.create_app(
         __name__,
@@ -97,7 +97,7 @@ def _before():
     is_admin = False
     if 'user_id' in session and 'user' in session:
         # Refresh the user session
-        login.setUserStatus(session['user'],cleanRecordID(session['user_id']))
+        setUserStatus(session['user'],cleanRecordID(session['user_id']))
         is_admin = User(g.db).is_admin(session['user_id'])
 
     # if site is down and user is not admin, stop them here.
@@ -168,6 +168,9 @@ def create_menus():
     
     user.create_menus() # g.admin now holds access rules Users, Prefs and Roles
 
+    trip.create_menus()
+
+
 @app.teardown_request
 def _teardown(exception):
     if 'db' in g:
@@ -189,15 +192,13 @@ def initalize_base_tables(db=None):
         get_db()
     
     user.initalize_tables(g.db)
-
-    # ### setup any other tables you need here....
-    # import starter_module.models
-    # starter_module.models.init_db(db)
+    trip.initialize_tables(g.db)
     
 def register_blueprints():
     """Register all your blueprints here and initialize 
     any data tables they need.
     """
+    
     ## Setup the routes for users
     user.register_blueprints(app)
     
@@ -207,12 +208,7 @@ def register_blueprints():
     app.register_blueprint(tools.mod)
     
     # # add app specific modules...
-    # from starter_module.models import init_db as starter_init
-    # starter_init(g.db) #initialize the tables for the module
-    # from starter_module.views import starter
-    # app.register_blueprint(starter.mod)
-    # # update function 'create_menus' to display menu items for the app
-    # print(app.bluepints)
+    trip.register_blueprints(app)
     
 
 #Register the static route
