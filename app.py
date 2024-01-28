@@ -144,6 +144,7 @@ def create_menus():
     g.menu_items = [
         {'title':'Home','url':url_for('www.home')},
         {'title':'Contact Me','url':url_for('www.contact')},
+        {'title': 'Travel Log','url':url_for('travel_log.home')},
         ]
         
     # g.admin items are added to the navigation menu by default
@@ -209,7 +210,8 @@ def register_blueprints():
     
     # # add app specific modules...
     trip.register_blueprints(app)
-    
+    from travel_log.views import travel_log
+    travel_log.register_blueprints(app)
 
 #Register the static route
 app.add_url_rule('/static/<path:filename>','static',shotglass.static)
