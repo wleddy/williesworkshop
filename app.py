@@ -210,9 +210,7 @@ def register_blueprints():
     
     # # add app specific modules...
     trip.register_blueprints(app)
-    from travel_log.views import travel_log
-    travel_log.register_blueprints(app)
-
+ 
 #Register the static route
 app.add_url_rule('/static/<path:filename>','static',shotglass.static)
 
