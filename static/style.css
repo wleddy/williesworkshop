@@ -53,7 +53,7 @@ pre {
     --menu-border: rgb(247, 240, 230);
    }
 
-@media (prefers-color-scheme: light)
+@media (prefers-color-scheme: dark)
 {
     :root {
         color: white;
