@@ -39,74 +39,107 @@ pre {
 {width:98%;}
 
 
-/* colors */
-/* Teal & pale green */
-/*.w3-menu-color,.w3-drop-menu-hover-color:hover,
-.w3-primary-color,.w3-primary-hover-color:hover,
-.w3-drop-menu-section-hover-color:hover,.w3-drop-menu-section-color:hover,
-.w3-drop-menu-section-color
-{color:#fff!important;background-color:#009688!important}
-.w3-primary-border-color,.w3-primary-hover-border-color:hover{border-color:rgb(63, 36, 20)!important}
+/* colors to use... */
+/* Teal and Pale green */
+:root {
+    color:#000;
+    background-color: #f8f8f8;
+    --primary-color: #009688;
+    --primary-contrast: #fff;
+    --primary-border: rgb(63, 36, 20);
+    --secondary-color: #ddffdd; 
+    --secondary-contrast: #000;
+    --secondary-border: #ddffdd;
+    --menu-border: rgb(247, 240, 230);
+   }
 
-.w3-menu-hover-color:hover,
-.w3-secondary-color,.w3-secondary-hover-color:hover,.w3-drop-menu-color,
-.w3-label-color,.w3-label-hover-color:hover,.roster-hover-color:hover
-{color:#000!important;background-color:#ddffdd!important}
-.w3-secondary-border-color,.w3-secondary-hover-border-color:hover{border-color:#ddffdd!important}
+@media (prefers-color-scheme: light)
+{
+    :root {
+        color: white;
+        background-color: black;
 
-.w3-menu-border {
-    border:solid 1pt rgb(247, 240, 230)!important;
+        --primary-color: #005d54;
+        --primary-contrast: #fff;
+        --primary-border: white;
+        --secondary-color: #3f813f; 
+        --secondary-contrast: #fafbfa;
+        --secondary-border: #ddffdd;
+        --menu-border: rgb(247, 240, 230);
+       }
+    .datatable tr {
+        color:black;
+        background-color:lightgray;
+    }
+    .w3-striped tbody tr:nth-child(even) {
+        background-color:#e1e0e0;
+    }
+    .sg-busy-box {
+        background-color:black;
+        border:2pt solid white;
+    }
+    .w3-table-all tr:nth-child(even), .datatable tr:nth-child(even) {
+        background-color: var(--secondary-color)!important;
+        color:white!important;
+    }
+    
+    .w3-hoverable tbody tr:hover, .w3-ul.w3-hoverable li:hover, .datatable tr {
+        background-color:rgb(80, 81, 80)!important;
+        color: white !important;
+    }
+    .w3-btn, .w3-button {
+        border: white .5pt solid;
+    }
+    
+    #keypad_header {
+        color:white;
+    }
+    #keypad_window div:first-child {
+        background-color:black;
+    }
 }
-*/
-/* amber and sand */
 
-
-.w3-menu-color,
+/* the actual styles... */
 .w3-menu-color,.w3-drop-menu-hover-color:hover,
 .w3-primary-color,.w3-primary-hover-color:hover,
 .w3-drop-menu-section-hover-color:hover,.w3-drop-menu-section-color:hover,
 .w3-drop-menu-section-color
-{color:#000!important;background-color:#ffc107!important}
-.w3-primary-border-color,.w3-primary-hover-border-color:hover{border-color:#ffc107!important}
+{color:var(--primary-contrast)!important;background-color:var(--primary-color)!important}
+.w3-primary-border-color,.w3-primary-hover-border-color:hover{border-color:var(--primary-border)!important}
 
 .w3-menu-hover-color:hover,
 .w3-secondary-color,.w3-secondary-hover-color:hover,.w3-drop-menu-color,
 .w3-label-color,.w3-label-hover-color:hover,.roster-hover-color:hover
-{color:#000!important;background-color:#fdf5e6!important}
-.w3-secondary-border-color,.w3-secondary-hover-border-color:hover{border-color:#fdf5e6!important}
+{color:var(--secondary-contrast)!important;background-color:var(--secondary-color)!important}
+.w3-secondary-border-color,.w3-secondary-hover-border-color:hover{border-color:var(--secondary-border)!important}
 
 .w3-menu-border {
-    border:solid 1pt rgb(247, 240, 230)!important;
+    border:solid 1pt var(--menu-border)!important;
 }
 
-/* indigo and blue */
-/*
-.w3-menu-color,
-.w3-menu-color,.w3-drop-menu-hover-color:hover,
-.w3-primary-color,.w3-primary-hover-color:hover,
-.w3-drop-menu-section-hover-color:hover,.w3-drop-menu-section-color:hover,
-.w3-drop-menu-section-color
-{color:#fff!important;background-color:#3f51b5!important}
-.w3-primary-border-color,.w3-primary-hover-border-color:hover{border-color:#ddffff!important}
+/* styles for the pagination in the record lists */
 
-.w3-menu-hover-color:hover,
-.w3-secondary-color,.w3-secondary-hover-color:hover,.w3-drop-menu-color,
-.w3-label-color,.w3-label-hover-color:hover,.roster-hover-color:hover
-{color:#000!important;background-color:#ddffff!important}
-.w3-secondary-border-color,.w3-secondary-hover-border-color:hover{border-color:#ddffff!important}
-
-.w3-menu-border {
-    border:solid 1pt rgb(247, 240, 230)!important;
-}*/
-
-/* for field labels and buttons */
-/* required fields */
-/* red */
-.w3-label-color,.w3-label-hover-color:hover{color:#000!important;background-color:#ddffdd!important}
-.w3-label-req,.w3-hover-label-req:hover{color:#000!important;background-color:#ffdddd!important}
-.w3-text-req,.w3-hover-text-req:hover{color:#f44336!important}
-
-/* buttons */
-.w3-save-button-color,.w3-save-button-hover-color:hover{color:#fff!important;background-color:#009688!important}
-.w3-delete-button-color,.w3-delete-button-hover-color:hover{color:#fff!important;background-color:#ff5722!important}
-.w3-cancel-button-color,.w3-delete-button-hover-color:hover{color:#fff!important;background-color:#3f51b5!important}
+/* .sg.pagination {} */
+.sg-page-current {
+    font-weight: bold;
+}
+a.sg-page-end, a.sg-page-prev,
+a.sg-page-next, a.sg-page-select,
+a.sg-page-begin
+    {
+    text-decoration: none;
+}
+.sg-page-end, .sg-page-begin,
+.sg-page-next, .sg-page-prev  {
+    background-color: var(--primary-color);
+    color: var(--primary-contrast);
+    padding:2pt;
+}
+.sg-page-begin.sg-page-inactive, .sg-page-end.sg-page-inactive,
+.sg-page-begin.sg-page-current, .sg-page-end.sg-page-current,
+.sg-page-next.sg-page-inactive, .sg-page-prev.sg-page-inactive,
+.sg-page-next.sg-page-current, .sg-page-prev.sg-page-current {
+    color: var(--secondary-contrast);
+    background-color: var(--secondary-color);
+    padding:2pt;
+}
