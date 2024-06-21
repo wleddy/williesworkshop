@@ -1,0 +1,18 @@
+#!/usr/bin/bash
+
+git pull origin master
+
+cd shotglass2/
+git pull origin master
+
+cd ../travel_center
+git pull origin master
+
+cd ../
+
+echo 'Touch me...'
+touch tmp/restart.txt
+
+echo 'All Done'
+
+
