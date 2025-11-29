@@ -4,7 +4,7 @@ mistune
 Pillow
 pytest
 pytz
-timezonefinder[pytz]
+timezonefinder[numba]
 google-api-python-client 
 google-auth-httplib2
 google-auth-oauthlib
