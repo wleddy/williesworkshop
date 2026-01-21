@@ -10,6 +10,7 @@ from shotglass2.users.models import User
 from shotglass2.users.views import user
 from shotglass2.users.views.login import setUserStatus
 from travel_log.views import trip
+from light_control.views import light_control
 
 
 app = shotglass.create_app(
@@ -170,6 +171,7 @@ def create_menus():
     user.create_menus() # g.admin now holds access rules Users, Prefs and Roles
 
     trip.create_menus()
+    light_control.create_menus()
 
 
 @app.teardown_request
@@ -194,6 +196,7 @@ def initalize_base_tables(db=None):
     
     user.initalize_tables(g.db)
     trip.initialize_tables(g.db)
+    light_control.initialize_tables(g.db)
     
 def register_blueprints():
     """Register all your blueprints here and initialize 
@@ -210,6 +213,7 @@ def register_blueprints():
     
     # # add app specific modules...
     trip.register_blueprints(app)
+    light_control.register_blueprints(app)
  
 #Register the static route
 app.add_url_rule('/static/<path:filename>','static',shotglass.static)
