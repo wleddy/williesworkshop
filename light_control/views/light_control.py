@@ -16,6 +16,7 @@ import light_control.models as models
 
 PRIMARY_TABLE = models.LightControl
 URL_PREFIX = 'lights'
+TESTING_DATA = 'instance/light_control.json'
 
 mod = Blueprint('lights',__name__, 
                 template_folder='templates/light_control/', 
@@ -111,7 +112,14 @@ def get(uuid = None):
 
     urllib3.disable_warnings() # disable the security warning
 
-    clean_data = {}
+
+    #### For testing
+    def encrypt(data):
+        return data
+    def decrypt(data,*args,**kwargs):
+        return data
+    
+
     def _validate_post(form):
         # validate and organize the post data
         # get all the timer fields first
@@ -132,27 +140,26 @@ def get(uuid = None):
         end_tag = 'new_timer_off'
         handle_timer()
         timers.sort()
-        clean_data['timers'] = timers
+        data['timers'] = timers
 
         # get the rest of the elements
         for k,v in form.items():
             if k == 'name' and v:
-                clean_data[k] = v # name may not be empty
+                data[k] = v # name may not be empty
             elif k in ['uuid',"secret","host"]:
                 pass # never update these
             elif 'timer' in k:
                 pass # already handled above
             else:
-                clean_data[k] = v
+                data[k] = v
 
 
     # import pdb;pdb.set_trace()
 
     data = {"error":'',}
-    form = request.form
 
     if not uuid:
-        uuid = form.get('uuid')
+        uuid = request.form.get('uuid')
 
     if not uuid:
         recs = PRIMARY_TABLE(g.db).select()
@@ -164,28 +171,43 @@ def get(uuid = None):
     else:
         try:
             data['date'] = datetime_as_string(local_datetime_now())
-
             if request.form:
                 # validate data_dict then...
-                _validate_post(request.form) # validated form is now in clean_data
-                rec.update(clean_data)
+                _validate_post(request.form) # validated form is now in data
+                rec.update(data)
                 rec.save(commit=True)
-                data.update(clean_data)
-                # Send the new dict back to the device
-                # Encrypt data
-                # secret_data = encrypt(data)
-                # resp = requests.post(path.join(rec.host,'update'),data=json.dumps(secret_data))
-            else:
-                # # ping host for current device state
-                # resp = requests.get(path.join(rec.host,'status.json'))
-                # if resp and resp.status == 200:
-                #     ct = decript resp.text
-                #     data_dict = json.loads(ct)
-                # else:
-                #     raise ValueError(f"Not able to connect to device. resp.status: {resp.status} ")
-                data_dict = json.loads('{"uuid":"1234567890","state":-1,"delay_seconds":30,"timers":[["17:30","22:15"]]}')
+                data['uuid'] = rec.uuid
+                # some items must be int
+                for k in ['state','delay_seconds']:
+                    if k in data and isinstance(data[k],str):
+                        try:
+                            data[k] = int(data[k])
+                        except:
+                            pass
 
-                data.update(data_dict)
+                data.update(data)
+                # Send the new dict back to the device
+
+                #### for testing
+                if request.host == '127.0.0.1:5000':
+                    rec.host = 'http://127.0.0.1:5000'
+
+                # Encrypt data
+                secret_data = encrypt(data)
+                resp = requests.post(path.join(rec.host,URL_PREFIX,'update'),json=secret_data)
+            else:
+                 #### for testing
+                if request.host == '127.0.0.1:5000':
+                    rec.host = 'http://127.0.0.1:5000'
+
+                # ping host for current device state
+                resp = requests.get(path.join(rec.host,URL_PREFIX,'status.json'))
+                if resp and resp.status_code == 200:
+                    if resp.text:
+                        ct = decrypt(resp.text)
+                        data = json.loads(ct)
+                else:
+                    raise ValueError(f"Not able to connect to device. resp.status: {resp.status_code} ")
 
             data['rec'] = rec
         except Exception as e:
@@ -193,7 +215,27 @@ def get(uuid = None):
     
     return render_template('lights_home.html',data=data)
 
-    
+
+### these two functions are going to live on the remote device
+### Here just for testing
+@mod.route('status.json',methods=['GET',])
+def status():
+    # import pdb;pdb.set_trace()
+    try:
+        with open(TESTING_DATA,'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
+
+@mod.route('update',methods=['POST',])
+def update():
+    # import pdb;pdb.set_trace()
+    if request.json:
+        with open(TESTING_DATA,'w') as f:
+            f.write(json.dumps(request.json))
+    return 'ok'
+
+
 def create_menus():
     """
     Create menu items for this module

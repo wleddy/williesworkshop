@@ -11,7 +11,8 @@
         <fieldset>
             {{ input_field(data.rec.uuid,"uuid",type='hidden') }}
             <p>{{ input_field(data.rec.name,"name","Lite Name",req=False) }}</p>
-            <p>{{ option_select_field(data.state,"state",label="Light State",
+            {% set state = data.state | string %}
+            <p>{{ option_select_field(state,"state",label="Light State",
                 options=[
                 {'value':"-1",'name':'Auto',},
                 {'value':"1",'name':'Always On',},
@@ -49,10 +50,12 @@
                 </tr>
             {% endfor %}
                 <tr>
-                    <td colspan="2" style="text-align: center;">New Timer:</td>
+                    <th colspan="2" style="text-align: center;border-top: 2pt black solid;">New Timer:</th>
+                    <th>&nbsp;</th>
                <tr>
                     <td>{{ input_field('','new_timer_on',label = None, type="time")}}</td>
                     <td>{{ input_field('','new_timer_off',label=None, type="time")}}</td>
+                    <td>&nbsp;</td>
                 </tr>
                 </tr>
            </table>

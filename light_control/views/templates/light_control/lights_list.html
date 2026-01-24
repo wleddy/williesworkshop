@@ -6,7 +6,7 @@
 {% if recs %}
 <table>
     {% for rec in recs%}
-    <tr><td style="cursor:pointer;" onclick="location='{{url_for("lights.get")}}/{{rec.uuid}}'">{{rec.name}}</td></tr>
+    <tr><td style="cursor:pointer;" onclick="location='{{url_for("lights.get")}}/{{rec.uuid}}'"><h3>{{rec.name}} &rarr;</h3></td></tr>
     {% endfor %}
 </table>
 {% else %}
