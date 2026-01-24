@@ -1,8 +1,11 @@
 from flask import request, session, g, redirect, url_for, \
      render_template, flash, Blueprint
 import json
-from datetime import datetime, time
-from shotglass2.takeabeltof.date_utils import local_datetime_now
+import time
+from os import path
+import requests
+import urllib3
+from shotglass2.takeabeltof.date_utils import local_datetime_now, datetime_as_string
 from shotglass2.takeabeltof.utils import printException, cleanRecordID, is_mobile_device
 from shotglass2.users.admin import login_required, table_access_required
 from shotglass2.takeabeltof.views import TableView, EditView
@@ -12,11 +15,12 @@ import light_control.models as models
 
 
 PRIMARY_TABLE = models.LightControl
+URL_PREFIX = 'lights'
 
 mod = Blueprint('lights',__name__, 
                 template_folder='templates/light_control/', 
                 static_folder='static/',
-                url_prefix='/lights',
+                url_prefix=f'/{URL_PREFIX}',
                 )
 
 
@@ -42,7 +46,7 @@ def display(path=None):
     #     ]
     
     return view.dispatch_request()
-    
+
 
 ## Edit the PRIMARY_TABLE
 @mod.route('/edit', methods=['POST', 'GET'])
@@ -55,35 +59,6 @@ def edit(rec_id=None):
     g.title = "Edit {} Record".format(PRIMARY_TABLE(g.db).display_name)
 
     view = EditView(PRIMARY_TABLE,g.db,rec_id)
-    # Optonally may want to specify the edit fields to use with default edit form
-    # otherwise all fields will be included except forgien keys
-
-    # view.edit_fields = []
-    
-    # view.edit_fields.extend(
-    #     [
-    #     {'name':'location_name','req':True,},
-    #     {'name':'entry_type','req':True,'type':'select','options':[
-    #         {'name':'Departure'},
-    #         {'name':'Point of Interest'},
-    #         {'name':'Arrival'},
-    #     ]},
-    #     {'name':'entry_date','req':True,'type':'datetime','label':'When'},
-    #     ]
-    # )
-    # entry_date_dict = {'name':'entry_date','type':'raw','content':''}
-    # entry_date_dict['content'] = """<p><strong>Some Raw HTML</strong></p>"""
-    # view.edit_fields.extend([entry_date_dict])
-
-    # Some methods in view you can override
-    # view.validate_form = validate_form # view does almost no validation
-    # view.after_get_hook = ? # view has just loaded the record from disk
-    # view.before_commit_hook = ? # view is about to commit the record
-
-    # if is_mobile_device():
-    #     # Sometimes not as convenient on mobile...
-    #     view.use_anytime_date_picker = False
-
 
     # Process the form?
     if request.form:
@@ -112,6 +87,112 @@ def validate_form(view):
             
     return valid_form
 
+@mod.route('get/<uuid>',methods=['GET','POST',])
+@mod.route('get/<uuid>/',methods=['GET','POST',])
+@mod.route('get/',methods=['GET','POST'])
+@mod.route('get',methods=['GET','POST'])
+@table_access_required(PRIMARY_TABLE)
+def get(uuid = None):
+    """ Retrieve or set the settings for a light controler
+    
+    Use the uuid to retieve the light_control record and return a JSON text string with current settings
+    If a POST update the controler data
+    
+    Args: uuid: str | None;
+    
+    Returns:  str
+    
+    Raises: None
+    """
+    g.listURL = url_for('.get')
+    g.editURL = url_for('.get')
+    g.cancelURL = g.listURL
+    g.title = "Light Controller"
+
+    urllib3.disable_warnings() # disable the security warning
+
+    clean_data = {}
+    def _validate_post(form):
+        # validate and organize the post data
+        # get all the timer fields first
+        def handle_timer():
+            if start_tag in form and end_tag in form \
+            and form[start_tag] and form[end_tag]:
+                timers.append([form[start_tag],form[end_tag]])
+                return True
+            else:
+                return False
+
+        timers = []
+        for x in range(1,11): # I dont expect more than 10 timers
+            start_tag = f"timer_{x}_on"
+            end_tag = f"timer_{x}_off"
+            if not handle_timer(): break
+        start_tag = 'new_timer_on'
+        end_tag = 'new_timer_off'
+        handle_timer()
+        timers.sort()
+        clean_data['timers'] = timers
+
+        # get the rest of the elements
+        for k,v in form.items():
+            if k == 'name' and v:
+                clean_data[k] = v # name may not be empty
+            elif k in ['uuid',"secret","host"]:
+                pass # never update these
+            elif 'timer' in k:
+                pass # already handled above
+            else:
+                clean_data[k] = v
+
+
+    # import pdb;pdb.set_trace()
+
+    data = {"error":'',}
+    form = request.form
+
+    if not uuid:
+        uuid = form.get('uuid')
+
+    if not uuid:
+        recs = PRIMARY_TABLE(g.db).select()
+        return render_template('lights_list.html',recs=recs)
+    
+    rec = PRIMARY_TABLE(g.db).select_one(where=f"uuid = {uuid}")
+    if not rec:
+        data['error'] = "That Device does not exist"
+    else:
+        try:
+            data['date'] = datetime_as_string(local_datetime_now())
+
+            if request.form:
+                # validate data_dict then...
+                _validate_post(request.form) # validated form is now in clean_data
+                rec.update(clean_data)
+                rec.save(commit=True)
+                data.update(clean_data)
+                # Send the new dict back to the device
+                # Encrypt data
+                # secret_data = encrypt(data)
+                # resp = requests.post(path.join(rec.host,'update'),data=json.dumps(secret_data))
+            else:
+                # # ping host for current device state
+                # resp = requests.get(path.join(rec.host,'status.json'))
+                # if resp and resp.status == 200:
+                #     ct = decript resp.text
+                #     data_dict = json.loads(ct)
+                # else:
+                #     raise ValueError(f"Not able to connect to device. resp.status: {resp.status} ")
+                data_dict = json.loads('{"uuid":"1234567890","state":-1,"delay_seconds":30,"timers":[["17:30","22:15"]]}')
+
+                data.update(data_dict)
+
+            data['rec'] = rec
+        except Exception as e:
+            data['error'] = f'Error: Not able to load data. ({str(e)})'
+    
+    return render_template('lights_home.html',data=data)
+
     
 def create_menus():
     """
@@ -124,19 +205,10 @@ def create_menus():
 
     """
 
-    # # Static dropdown menu...
-    # g.menu_items.append({'title':'Drop down header','drop_down_menu':{
-    #         'name':'First','url':url_for('.something'),
-    #         'name':'Second','url':url_for('.another'),
-    #         }
-    #     })
-    # # single line menu
-    # g.menu_items.append({'title':'Something','url':url_for('.something')})
-    
     # This makes a drop down menu for this application
-    g.admin.register(PRIMARY_TABLE,url_for('.display'),display_name='Lights',header_row=True,minimum_rank_required=500,roles=['admin',])
+    g.admin.register(PRIMARY_TABLE,url_for(f'{URL_PREFIX}.display'),display_name=URL_PREFIX.title(),header_row=True,minimum_rank_required=500,roles=['admin',])
     g.admin.register(PRIMARY_TABLE,
-        url_for('.display'),
+        url_for(f'{URL_PREFIX}.display'),
         display_name=plural(PRIMARY_TABLE(g.db).display_name,2),
         top_level=False,
         minimum_rank_required=500,
@@ -153,7 +225,6 @@ def register_blueprints(app, subdomain = None) -> None:
         subdomain -- limit access to this subdomain if difined (default: {None})
     """ 
     app.register_blueprint(mod, subdomain=subdomain)
-
 
 def initialize_tables(db) -> None:
     """

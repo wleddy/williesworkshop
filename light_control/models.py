@@ -4,7 +4,7 @@ from shotglass2.takeabeltof.utils import cleanRecordID
 class LightControl(SqliteTable):
     """The Light Conrol devices"""
 
-    TABLE_IDENTITY = 'control' # so we can get the table name before the app starts up
+    TABLE_IDENTITY = 'light_control' # so we can get the table name before the app starts up
 
     def __init__(self,db_connection):
         super().__init__(db_connection)
@@ -17,8 +17,9 @@ class LightControl(SqliteTable):
         
         sql = """
             'name' TEXT,
-            'UUID' TEXT,
-            'data'
+            'uuid' TEXT unique not null,
+            'secret' TEXT,
+            'host' TEXT
             """
         super().create_table(sql)
         

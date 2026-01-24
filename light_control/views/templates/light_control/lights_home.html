@@ -1,0 +1,66 @@
+{% extends 'lights_layout.html' %}
+
+{% from "_form_helpers.html" import input_field, select_field, option_select_field, radio_field, checkbox_field, label_only %}
+
+
+{% block body %}
+{% if data and not data.error %}
+<div class="w3-container">
+    <form id="main-form" action="{{ g.editURL }}" method=post class="entry" enctype="multipart/form-data">
+		{% include "editFormButtons.html" %}
+        <fieldset>
+            {{ input_field(data.rec.uuid,"uuid",type='hidden') }}
+            <p>{{ input_field(data.rec.name,"name","Lite Name",req=False) }}</p>
+            <p>{{ option_select_field(data.state,"state",label="Light State",
+                options=[
+                {'value':"-1",'name':'Auto',},
+                {'value':"1",'name':'Always On',},
+                {'value':"0",'name':'Always Off',},
+                {'value':"2",'name':'On till Next',},
+                {'value':"3",'name':'Off till Next',},
+                ]
+                ) }}
+             </select></p>
+             {% set delay_sec = data.delay_seconds | string %}
+            <p>{{ option_select_field(delay_sec,"delay_seconds","Delay Off",
+                options=[
+                {'value':"0",'name':'No Delay',},
+                {'value':"10",'name':'10 Seconds',},
+                {'value':"30",'name':'30 Seconds',},
+                {'value':"60",'name':'60 Seconds',},
+                ]
+                ) }}
+           </select></p>
+           <h3>Timers</h3>
+           <table>
+            <tr>
+                <th>On</th><th>Off</th>
+            </tr>
+            {% set x = [0] %}
+            {% for timer in data.timers %}
+                {% set _ = x.append(x.pop()+1) %}
+                <tr>
+                    <td class="timer_{{ x[0] | string }}">{{ input_field(timer[0],'timer_'+x[0] | string+'_on',label = None, class='timer_' + x[0] | string, type="time")}}</td>
+                    <td class="timer_{{ x[0] | string }}">{{ input_field(timer[1],'timer_'+x[0] | string+'_off', class='timer_' + x[0] | string, label=None, type="time")}}</td>
+                    <td class="timer_{{ x[0] | string }}">
+                        <img src="{{ url_for('static', filename='light_control/images/clear_input.png') }}" 
+                        onclick="$('.timer_{{ x[0] | string }}:input').prop('disabled',true);$('.timer_{{ x[0] | string }}').hide()" />
+                    </td>
+                </tr>
+            {% endfor %}
+                <tr>
+                    <td colspan="2" style="text-align: center;">New Timer:</td>
+               <tr>
+                    <td>{{ input_field('','new_timer_on',label = None, type="time")}}</td>
+                    <td>{{ input_field('','new_timer_off',label=None, type="time")}}</td>
+                </tr>
+                </tr>
+           </table>
+        </fieldset>
+    </form>
+</div>
+{% else %}
+<div><p>{% if not data %}No Data is Available{% else %}{{data.error}}{% endif %}</p></div>
+{% endif %}
+{% endblock body %}
+

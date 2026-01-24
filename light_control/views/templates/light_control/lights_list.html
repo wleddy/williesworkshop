@@ -1,0 +1,16 @@
+{% extends 'lights_layout.html' %}
+
+
+{% block body %}
+<h2>Light Controler List</h2>
+{% if recs %}
+<table>
+    {% for rec in recs%}
+    <tr><td style="cursor:pointer;" onclick="location='{{url_for("lights.get")}}/{{rec.uuid}}'">{{rec.name}}</td></tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No Controllers to list...</p>
+{% endif%}
+{% endblock body %}
+
