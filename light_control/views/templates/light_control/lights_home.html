@@ -41,11 +41,11 @@
             {% for timer in data.timers %}
                 {% set _ = x.append(x.pop()+1) %}
                 <tr>
-                    <td class="timer_{{ x[0] | string }}">{{ input_field(timer[0],'timer_'+x[0] | string+'_on',label = None, class='timer_' + x[0] | string, type="time")}}</td>
-                    <td class="timer_{{ x[0] | string }}">{{ input_field(timer[1],'timer_'+x[0] | string+'_off', class='timer_' + x[0] | string, label=None, type="time")}}</td>
+                    <td class="timer_{{ x[0] | string }}">{{ input_field(timer[0],'timer_'+x[0] | string+'_on',label = None, class='timer_' + x[0] | string + '_input', type="time")}}</td>
+                    <td class="timer_{{ x[0] | string }}">{{ input_field(timer[1],'timer_'+x[0] | string+'_off', class='timer_' + x[0] | string + '_input', label=None, type="time")}}</td>
                     <td class="timer_{{ x[0] | string }}">
                         <img src="{{ url_for('static', filename='light_control/images/clear_input.png') }}" 
-                        onclick="$('.timer_{{ x[0] | string }}:input').prop('disabled',true);$('.timer_{{ x[0] | string }}').hide()" />
+                        onclick="$('.timer_{{ x[0] | string }}_input').prop('type','text').val('');$('.timer_{{ x[0] | string }}').hide()" />
                     </td>
                 </tr>
             {% endfor %}

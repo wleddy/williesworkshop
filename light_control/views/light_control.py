@@ -124,9 +124,9 @@ def get(uuid = None):
         # validate and organize the post data
         # get all the timer fields first
         def handle_timer():
-            if start_tag in form and end_tag in form \
-            and form[start_tag] and form[end_tag]:
-                timers.append([form[start_tag],form[end_tag]])
+            if start_tag in form and end_tag in form:
+                if form[start_tag] and form[end_tag]: # if either is empty don't record but continue outer loop
+                    timers.append([form[start_tag],form[end_tag]])
                 return True
             else:
                 return False
@@ -188,8 +188,8 @@ def get(uuid = None):
                 data.update(data)
                 # Send the new dict back to the device
 
-                #### for testing
-                if request.host == '127.0.0.1:5000':
+                 #### for testing
+                if 'williesworkshop' not in request.host:
                     rec.host = 'http://127.0.0.1:5000'
 
                 # Encrypt data
@@ -197,7 +197,7 @@ def get(uuid = None):
                 resp = requests.post(path.join(rec.host,URL_PREFIX,'update'),json=secret_data)
             else:
                  #### for testing
-                if request.host == '127.0.0.1:5000':
+                if 'williesworkshop' not in request.host:
                     rec.host = 'http://127.0.0.1:5000'
 
                 # ping host for current device state
