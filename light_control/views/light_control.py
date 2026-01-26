@@ -164,7 +164,10 @@ def get(uuid = None):
 
     if not uuid:
         recs = PRIMARY_TABLE(g.db).select()
-        return render_template('lights_list.html',recs=recs)
+        if recs and len(recs) > 1:
+            return render_template('lights_list.html',recs=recs)
+        else:
+            uuid = recs[0].uuid #display the single record found
     
     rec = PRIMARY_TABLE(g.db).select_one(where=f"uuid = {uuid}")
     if not rec:
@@ -178,7 +181,7 @@ def get(uuid = None):
                 rec.save(commit=True)
                 data['uuid'] = rec.uuid
                 # some items must be int
-                for k in ['state','delay_seconds']:
+                for k in ['mode','delay_seconds']:
                     if k in data and isinstance(data[k],str):
                         try:
                             data[k] = int(data[k])

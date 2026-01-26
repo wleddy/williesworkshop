@@ -7,21 +7,24 @@ import uasyncio as asyncio
 import socket
 import time
 import random
+import sys
 import json
 from machine import Pin
 from logging import logging as log
 from ntp_clock import Clock
 from machine import RTC
 from wifi_connect import connection
+from os_path import make_path
 
-log.setLevel(log.DEBUG)
+# log.setLevel(log.DEBUG)
 
-# Wi-Fi credentials
-ssid = 'Wallace'
-password = '9164442903'
-
-
-led = Pin('LED', Pin.OUT)
+if sys.platform == 'esp32':
+    led = Pin(2, Pin.OUT)
+else:
+    led = Pin('LED', Pin.OUT)
+    
+relay_pin = Pin(2, Pin.OUT)
+relay_pin.off()
 
 connection.connect()
 
@@ -33,13 +36,14 @@ except:
 
 DATA_FILE = "instance/lights.json"
 
-def aknowledge(times=3):
-#     led.on()
+
+def acknowledge(times=3):
+    led.on()
     for x in range(times):
         time.sleep(0.5)
-#         led.toggle()
+        led.toggle()
     
-aknowledge()
+acknowledge()
 
 async def manage_switch():
     if not connection.is_connected():
@@ -52,20 +56,21 @@ async def manage_switch():
             the_time = None
     except:
         the_time = None
-#     print(the_time)
-#     print("from file...", get_status_from_file())
+        
+    data = json.loads(get_status_from_file())
+    timer_on = False
+    light_on = False
+    new_mode = data.get('mode',-1)
+
     if the_time:
-        data = json.loads(get_status_from_file())
-        timer_on = False
-        light_on = False
-        new_state = data.get('state',-1)
+        
         if 'timers' in data and the_time:
             for timer in data['timers']:
-                print('the time:',the_time,'start:',timer[0],'end time:',timer[1])
+#                 print('the time:',the_time,'start:',timer[0],'end time:',timer[1])
                 if timer[0] <= the_time and timer[1] >= the_time:
                     timer_on = True
                     break
-        state = data.get('state',-1)
+        state = data.get('mode',-1)
         if state == -1 and timer_on: #auto
             light_on = True
         elif state == 0: #Always off
@@ -74,34 +79,39 @@ async def manage_switch():
             light_on = True
         elif state == 2 and timer_on: #on till next
             light_on = True
-            new_state = -1 # set back to auto
+            new_mode = -1 # set back to auto
         elif state == 2 and not timer_on: #on till next
             light_on = True
         elif state == 3 and timer_on: #Off till next
             light_on = False
         elif state == 3 and not timer_on:
             light_on = False
-            new_state = -1 #set back to auto
+            new_mode = -1 #set back to auto
         
-        # save the data?
-        if new_state != data.get('state'):
-            save_status_to_file(json.dumps(data))
-        print("light is on?",light_on)
         if light_on:
             led.on()
+            relay_pin.on()
         else:
             led.off()
+            relay_pin.off()
     else:
         # Don't have the time...
         led.off()
+        relay_pin.off()
         
-    
+    # save the data?
+    if new_mode != data.get('mode'):
+        print('saving:',data)
+        save_status_to_file(json.dumps(data))
+        
+
 def save_status_to_file(data):
+    make_path('/',DATA_FILE)
     with open(DATA_FILE,'w') as f:
             f.write(data)
 
 def get_status_from_file():
-    default_content = '{"state":-1,"delay_seconds":10, "timers":[["17:00","22:00"]]}' # default value
+    default_content = '{"mode":-1,delay_seconds":10, "timers":[["17:00","22:00"]]}' # default value
     content = ''
     try:
         with open(DATA_FILE,"r") as f:
@@ -129,14 +139,14 @@ def decode(data):
     return data
 
 def status():
-    aknowledge(1)
+    acknowledge(1)
     content = get_status_from_file()
     print(f"handle status request: {content}")
 
     return content
 
 def update(data):
-    aknowledge(1)
+    acknowledge(1)
     if data:        
         save_status_to_file(data)
         content = 'Ok'
@@ -147,31 +157,6 @@ def update(data):
     
     return content
 
-
-# Init Wi-Fi Interface
-def init_wifi(ssid, password):
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    # Connect to your network
-    wlan.connect(ssid, password)
-    # Wait for Wi-Fi connection
-    connection_timeout = 10
-    while connection_timeout > 0:
-        print(wlan.status())
-        if wlan.status() >= 3:
-            break
-        connection_timeout -= 1
-        print('Waiting for Wi-Fi connection...')
-        time.sleep(1)
-    # Check if connection is successful
-    if wlan.status() != 3:
-        print('Failed to connect to Wi-Fi')
-        return False
-    else:
-        print('Connection successful!')
-        network_info = wlan.ifconfig()
-        print('IP address:', network_info[0])
-        return True
 
 # Asynchronous functio to handle client's requests
 async def handle_client(reader, writer):
