@@ -125,7 +125,8 @@ def get(uuid = None):
         # get all the timer fields first
         def handle_timer():
             if start_tag in form and end_tag in form:
-                if form[start_tag] and form[end_tag]: # if either is empty don't record but continue outer loop
+                if form[start_tag] and form[end_tag]: 
+                    # if either is empty don't record but continue outer loop
                     timers.append([form[start_tag],form[end_tag]])
                 return True
             else:
@@ -170,7 +171,6 @@ def get(uuid = None):
         data['error'] = "That Device does not exist"
     else:
         try:
-            data['date'] = datetime_as_string(local_datetime_now())
             if request.form:
                 # validate data_dict then...
                 _validate_post(request.form) # validated form is now in data
@@ -188,17 +188,23 @@ def get(uuid = None):
                 data.update(data)
                 # Send the new dict back to the device
 
-                 #### for testing
-                if 'williesworkshop' not in request.host:
-                    rec.host = 'http://127.0.0.1:5000'
+                #  #### for testing
+                # if 'williesworkshop' not in request.host:
+                #     rec.host = 'http://127.0.0.1:5000'
 
                 # Encrypt data
                 secret_data = encrypt(data)
-                resp = requests.post(path.join(rec.host,URL_PREFIX,'update'),json=secret_data)
+                resp = requests.get(path.join(rec.host,URL_PREFIX,'update?'),params=(json.dumps(secret_data)))
+                try:
+                    if resp.text.lower() != 'ok' or resp.status_code != 200:
+                        flash(f"Bad Response from 'update', '{resp.text}', status: {resp.status_code}")
+                except Exception as e:
+                    flash("Unexpected Error from 'update'")
+                    raise e
             else:
-                 #### for testing
-                if 'williesworkshop' not in request.host:
-                    rec.host = 'http://127.0.0.1:5000'
+                #  #### for testing
+                # if 'williesworkshop' not in request.host:
+                #     rec.host = 'http://127.0.0.1:5000'
 
                 # ping host for current device state
                 resp = requests.get(path.join(rec.host,URL_PREFIX,'status.json'))
@@ -227,12 +233,12 @@ def status():
     except FileNotFoundError:
         return ""
 
-@mod.route('update',methods=['POST',])
+@mod.route('update',methods=['GET',])
 def update():
-    # import pdb;pdb.set_trace()
-    if request.json:
+    import pdb;pdb.set_trace()
+    if request.args and 'data' in request.args:
         with open(TESTING_DATA,'w') as f:
-            f.write(json.dumps(request.json))
+            f.write(request.args['data'])
     return 'ok'
 
 
@@ -277,3 +283,4 @@ def initialize_tables(db) -> None:
     """
     
     models.init_db(db)
+

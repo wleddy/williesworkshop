@@ -2,12 +2,49 @@
 
 {% from "_form_helpers.html" import input_field, select_field, option_select_field, radio_field, checkbox_field, label_only %}
 
+{% block head %}
+   {{ super() }}
+
+    <script>
+        function showDialog() { 
+        $('#myDialog').show(); 
+        } 
+        
+        $().ready(function(){
+            $('form').on("submit",function(){
+                showDialog();
+            })
+        })
+
+    </script>
+
+    <style>
+        #myDialog {
+            display:none;
+            position:absolute;
+            border: black 2pt solid;
+            max-width:300px;
+            padding:10px;
+            background-color:white;
+            color:black;
+        }
+    </style>
+{% endblock head %}
+
+{% block dialog %}
+
+{% endblock dialog %}
 
 {% block body %}
 {% if data and not data.error %}
-<div class="w3-container">
-    <form id="main-form" action="{{ g.editURL }}" method=post class="entry" enctype="multipart/form-data">
+    <div id="myDialog">
+        <h3>Change Submitted</h3>
+        <p style="text-align: center;"><img src="{{ url_for('static',filename='light_control/images/busy.gif')}}" /></p>
+    </div>
+    <div class="w3-container">
+     <form id="main-form" action="{{ g.editURL }}" method=post class="entry" enctype="multipart/form-data">
 		{% include "editFormButtons.html" %}
+
         <fieldset>
             {{ input_field(data.rec.uuid,"uuid",type='hidden') }}
             <p>{{ input_field(data.rec.name,"name","Lite Name",req=False) }}</p>
