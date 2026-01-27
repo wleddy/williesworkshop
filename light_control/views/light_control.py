@@ -169,7 +169,7 @@ def get(uuid = None):
         else:
             uuid = recs[0].uuid #display the single record found
     
-    rec = PRIMARY_TABLE(g.db).select_one(where=f"uuid = {uuid}")
+    rec = PRIMARY_TABLE(g.db).select_one(where=f"uuid = '{uuid}'")
     if not rec:
         data['error'] = "That Device does not exist"
     else:
