@@ -1,27 +1,21 @@
-# Rui Santos & Sara Santos - Random Nerd Tutorials
+# Based on Rui Santos & Sara Santos - Random Nerd Tutorials
 # Complete project details at https://RandomNerdTutorials.com/raspberry-pi-pico-w-asynchronous-web-server-micropython/
 
-# Import necessary modules
-import network
 import uasyncio as asyncio
-import socket
 import time
-import random
 import sys
 import json
 from machine import Pin
-from logging import logging as log
 from ntp_clock import Clock
-from machine import RTC
 from wifi_connect import connection
 from os_path import make_path
 
-# log.setLevel(log.DEBUG)
 
 if sys.platform == 'esp32':
     led = Pin(2, Pin.OUT)
 else:
     led = Pin('LED', Pin.OUT)
+led.off()
     
 relay_pin = Pin(2, Pin.OUT)
 relay_pin.off()
@@ -35,22 +29,23 @@ except:
     pass
 
 DATA_FILE = "instance/lights.json"
+delay_time = 0
 
-
-def acknowledge(times=3):
-    led.on()
+def acknowledge(times=2):
+    # even times returns led to prev state
     for x in range(times):
-        time.sleep(0.5)
         led.toggle()
+        time.sleep(0.5)
     
-acknowledge()
+acknowledge(4)
 
 async def manage_switch():
-    if not connection.is_connected():
-        connection.connect()
-    if not rtc.has_time:
-        rtc.set_time()
+    global delay_time
     try:
+        if not connection.is_connected():
+            connection.connect()
+        if not rtc.has_time:
+            rtc.set_time()
         the_time = rtc.time_string(format=24)
         if the_time == '--:--':
             the_time = None
@@ -62,42 +57,42 @@ async def manage_switch():
     light_on = False
     new_mode = data.get('mode',-1)
 
-    if the_time:
-        
-        if 'timers' in data and the_time:
-            for timer in data['timers']:
-#                 print('the time:',the_time,'start:',timer[0],'end time:',timer[1])
-                if timer[0] <= the_time and timer[1] >= the_time:
-                    timer_on = True
-                    break
-        state = data.get('mode',-1)
-        if state == -1 and timer_on: #auto
-            light_on = True
-        elif state == 0: #Always off
-            light_on = False
-        elif state == 1: #Always On
-            light_on = True
-        elif state == 2 and timer_on: #on till next
-            light_on = True
-            new_mode = -1 # set back to auto
-        elif state == 2 and not timer_on: #on till next
-            light_on = True
-        elif state == 3 and timer_on: #Off till next
-            light_on = False
-        elif state == 3 and not timer_on:
-            light_on = False
-            new_mode = -1 #set back to auto
-        
-        if light_on:
-            led.on()
-            relay_pin.on()
-        else:
+    if 'timers' in data and the_time:
+        for timer in data['timers']:
+            if timer[0] <= the_time and timer[1] >= the_time:
+                timer_on = True
+                break
+
+    state = data.get('mode',0) # turn off by default for safety
+    if state == -1 and timer_on: #auto
+        light_on = True
+    elif state == 0: #Always off
+        light_on = False
+    elif state == 1: #Always On
+        light_on = True
+    elif state == 2 and timer_on: #on till next
+        light_on = True
+        new_mode = -1 # set back to auto
+    elif state == 2 and not timer_on: #on till next
+        light_on = True
+    elif state == 3 and timer_on: #Off till next
+        light_on = False
+    elif state == 3 and not timer_on:
+        light_on = False
+        new_mode = -1 #set back to auto
+    
+    if light_on:
+        delay_time = 0
+        led.on()
+        relay_pin.on()
+    else:
+    #   print('delay_time:',delay_time,'Time:',time.time())
+        if delay_time == 0:
+            delay_time = time.time() + data.get('delay_seconds',0)
+    #       print('delay_time set to:',delay_time,'Time:',time.time())
+        if time.time() >= delay_time:
             led.off()
             relay_pin.off()
-    else:
-        # Don't have the time...
-        led.off()
-        relay_pin.off()
         
     # save the data?
     if new_mode != data.get('mode'):
@@ -139,21 +134,21 @@ def decode(data):
     return data
 
 def status():
-    acknowledge(1)
+    acknowledge()
     content = get_status_from_file()
-    print(f"handle status request: {content}")
+#     print(f"handle status request: {content}")
 
     return content
 
 def update(data):
-    acknowledge(1)
+    acknowledge()
     if data:        
         save_status_to_file(data)
         content = 'Ok'
     else:
         content = "No Data here"
     content = 'Ok'
-    print(f"update request returned: {content}")
+#     print(f"update request returned: {content}")
     
     return content
 
@@ -163,7 +158,7 @@ async def handle_client(reader, writer):
     
     print("Client connected")
     request_line = await reader.readline()
-    print('Request:', request_line)
+#     print('Request:', request_line)
     
     # Skip HTTP request headers
     while await reader.readline() != b"\r\n":
@@ -179,7 +174,7 @@ async def handle_client(reader, writer):
         tmp = request.split('?')
         if len(tmp) > 1:
             data = decode(tmp[1])
-            print('data received: '+ data)
+#             print('data received: '+ data)
 
         response = update(data)
     else:
