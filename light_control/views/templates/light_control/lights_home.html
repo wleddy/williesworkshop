@@ -52,11 +52,11 @@
             <p>{{ option_select_field(mode,"mode",label="Mode",
                 options=[
                 {'value':"-1",'name':'Auto',},
+                {'value':"2",'name':'On Early',},
+                {'value':"3",'name':'Off Early',},
                 {'value':"1",'name':'Always On',},
                 {'value':"0",'name':'Always Off',},
-                {'value':"2",'name':'On till Next',},
-                {'value':"3",'name':'Off till Next',},
-                ]
+                 ]
                 ) }}
              </select></p>
              {% set delay_sec = data.delay_seconds | string %}
