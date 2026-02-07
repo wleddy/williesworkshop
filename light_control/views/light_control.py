@@ -111,7 +111,7 @@ def get(uuid = None):
     g.title = "Light Controller"
 
     urllib3.disable_warnings() # disable the security warning
-
+    data = {"error":'',}
 
     #### For testing
     def encrypt(data):
@@ -126,6 +126,9 @@ def get(uuid = None):
         def handle_timer():
             if start_tag in form and end_tag in form:
                 if form[start_tag] and form[end_tag]: 
+                    if form[end_tag] <= form[start_tag]:
+                        data['error'] += f"Start time ({form[start_tag]}) must be before End time ({form[end_tag]})\n\r"
+                        return False
                     # if either is empty don't record but continue outer loop
                     timers.append([form[start_tag],form[end_tag]])
                 return True
@@ -139,7 +142,7 @@ def get(uuid = None):
             if not handle_timer(): break
         start_tag = 'new_timer_on'
         end_tag = 'new_timer_off'
-        handle_timer()
+        valid_timer = handle_timer()
         timers.sort()
         data['timers'] = timers
 
@@ -156,9 +159,6 @@ def get(uuid = None):
 
 
     # import pdb;pdb.set_trace()
-
-    data = {"error":'',}
-
     if not uuid:
         uuid = request.form.get('uuid')
 
@@ -177,33 +177,34 @@ def get(uuid = None):
             if request.form:
                 # validate data_dict then...
                 _validate_post(request.form) # validated form is now in data
-                rec.update(data)
-                rec.save(commit=True)
-                data['uuid'] = rec.uuid
-                # some items must be int
-                for k in ['mode','delay_seconds']:
-                    if k in data and isinstance(data[k],str):
-                        try:
-                            data[k] = int(data[k])
-                        except:
-                            pass
+                if not data['error']:
+                    rec.update(data)
+                    rec.save(commit=True)
+                    data['uuid'] = rec.uuid
+                    # some items must be int
+                    for k in ['mode','delay_seconds']:
+                        if k in data and isinstance(data[k],str):
+                            try:
+                                data[k] = int(data[k])
+                            except:
+                                pass
 
-                data.update(data)
-                # Send the new dict back to the device
+                    data.update(data)
+                    # Send the new dict back to the device
 
-                #  #### for testing
-                # if 'williesworkshop' not in request.host:
-                #     rec.host = 'http://127.0.0.1:5000'
+                    #  #### for testing
+                    # if 'williesworkshop' not in request.host:
+                    #     rec.host = 'http://127.0.0.1:5000'
 
-                # Encrypt data
-                secret_data = encrypt(data)
-                resp = requests.get(path.join(rec.host,URL_PREFIX,'update?'),params=(json.dumps(secret_data)))
-                try:
-                    if resp.text.lower() != 'ok' or resp.status_code != 200:
-                        flash(f"Bad Response from 'update', '{resp.text}', status: {resp.status_code}")
-                except Exception as e:
-                    flash("Unexpected Error from 'update'")
-                    raise e
+                    # Encrypt data
+                    secret_data = encrypt(data)
+                    resp = requests.get(path.join(rec.host,URL_PREFIX,'update?'),params=(json.dumps(secret_data)))
+                    try:
+                        if resp.text.lower() != 'ok' or resp.status_code != 200:
+                            flash(f"Bad Response from 'update', '{resp.text}', status: {resp.status_code}")
+                    except Exception as e:
+                        flash("Unexpected Error from 'update'")
+                        raise e
             else:
                 #  #### for testing
                 # if 'williesworkshop' not in request.host:
@@ -222,6 +223,8 @@ def get(uuid = None):
         except Exception as e:
             data['error'] = f'Error: Not able to load data. ({str(e)})'
     
+    if data['error']:
+        flash(data['error'])
     return render_template('lights_home.html',data=data)
 
 
@@ -238,7 +241,7 @@ def status():
 
 @mod.route('update',methods=['GET',])
 def update():
-    import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
     if request.args and 'data' in request.args:
         with open(TESTING_DATA,'w') as f:
             f.write(request.args['data'])

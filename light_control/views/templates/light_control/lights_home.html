@@ -36,7 +36,7 @@
 {% endblock dialog %}
 
 {% block body %}
-{% if data and not data.error %}
+{% if data %}
     <div id="myDialog">
         <h3>Change Submitted</h3>
         <p style="text-align: center;"><img src="{{ url_for('static',filename='light_control/images/busy.gif')}}" /></p>
@@ -101,7 +101,7 @@
     </form>
 </div>
 {% else %}
-<div><p>{% if not data %}No Data is Available{% else %}{{data.error}}{% endif %}</p></div>
+<div><p>No Data is Available</p></div>
 {% endif %}
 {% endblock body %}
 
