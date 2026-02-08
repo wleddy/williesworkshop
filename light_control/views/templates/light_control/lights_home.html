@@ -36,7 +36,7 @@
 {% endblock dialog %}
 
 {% block body %}
-{% if data %}
+{% if data and 'rec' in data %}
     <div id="myDialog">
         <h3>Change Submitted</h3>
         <p style="text-align: center;"><img src="{{ url_for('static',filename='light_control/images/busy.gif')}}" /></p>

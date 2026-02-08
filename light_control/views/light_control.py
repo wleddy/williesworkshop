@@ -203,7 +203,7 @@ def get(uuid = None):
                         if resp.text.lower() != 'ok' or resp.status_code != 200:
                             flash(f"Bad Response from 'update', '{resp.text}', status: {resp.status_code}")
                     except Exception as e:
-                        flash("Unexpected Error from 'update'")
+                        data['error'] += f"Unexpected Error from 'update' Error: {str(e)} \n\r"
                         raise e
             else:
                 #  #### for testing
@@ -215,13 +215,13 @@ def get(uuid = None):
                 if resp and resp.status_code == 200:
                     if resp.text:
                         ct = decrypt(resp.text)
-                        data = json.loads(ct)
+                        data.update(json.loads(ct))
                 else:
-                    raise ValueError(f"Not able to connect to device. resp.status: {resp.status_code} ")
+                    data['error'] += f"Not able to connect to device. resp.status: {resp.status_code} \n\r"
 
             data['rec'] = rec
         except Exception as e:
-            data['error'] = f'Error: Not able to load data. ({str(e)})'
+            data['error'] = f'Error: Not able to load data. ({str(e)})\n\r'
     
     if data['error']:
         flash(data['error'])
