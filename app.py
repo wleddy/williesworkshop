@@ -9,7 +9,7 @@ from shotglass2.users.admin import Admin
 from shotglass2.users.models import User
 from shotglass2.users.views import user
 from shotglass2.users.views.login import setUserStatus
-from travel_log.views import trip
+#from travel_log.views import trip
 from light_control.views import light_control
 
 
@@ -145,7 +145,7 @@ def create_menus():
     g.menu_items = [
         {'title':'Home','url':url_for('www.home')},
         {'title':'Contact Me','url':url_for('www.contact')},
-        {'title': 'Travel Log','url':url_for('travel_log.home')},
+        #{'title': 'Travel Log','url':url_for('travel_log.home')},
         ]
         
     # g.admin items are added to the navigation menu by default
@@ -170,7 +170,7 @@ def create_menus():
     
     user.create_menus() # g.admin now holds access rules Users, Prefs and Roles
 
-    trip.create_menus()
+    # trip.create_menus()
     light_control.create_menus()
 
 
@@ -195,7 +195,7 @@ def initalize_base_tables(db=None):
         get_db()
     
     user.initalize_tables(g.db)
-    trip.initialize_tables(g.db)
+    # trip.initialize_tables(g.db)
     light_control.initialize_tables(g.db)
     
 def register_blueprints():
@@ -212,7 +212,7 @@ def register_blueprints():
     app.register_blueprint(tools.mod)
     
     # # add app specific modules...
-    trip.register_blueprints(app)
+    # trip.register_blueprints(app)
     light_control.register_blueprints(app)
  
 #Register the static route
