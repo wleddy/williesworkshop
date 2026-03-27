@@ -17,6 +17,7 @@ import light_control.models as models
 PRIMARY_TABLE = models.LightControl
 URL_PREFIX = 'lights'
 TESTING_DATA = 'instance/light_control.json'
+TESTING_HOST = 'http://192.168.10.115:80'
 
 mod = Blueprint('lights',__name__, 
                 template_folder='templates/light_control/', 
@@ -173,6 +174,7 @@ def get(uuid = None):
     if not rec:
         data['error'] = "That Device does not exist"
     else:
+        #  #### for testing
         try:
             if request.form:
                 # validate data_dict then...
@@ -192,25 +194,33 @@ def get(uuid = None):
                     data.update(data)
                     # Send the new dict back to the device
 
-                    #  #### for testing
-                    # if 'williesworkshop' not in request.host:
-                    #     rec.host = 'http://127.0.0.1:5000'
-
                     # Encrypt data
                     secret_data = encrypt(data)
-                    resp = requests.get(path.join(rec.host,URL_PREFIX,'update?'),params=(json.dumps(secret_data)))
+                    # import pdb;pdb.set_trace()
+                    if TESTING_HOST:
+                        rec.host = TESTING_HOST
+                    resp = requests.post(path.join(rec.host,URL_PREFIX,'update'),json=secret_data)
+                    resp_ok = True
                     try:
-                        if resp.text.lower() != 'ok' or resp.status_code != 200:
+                        try:
+                            data = json.loads(resp.text)
+                            if data.get('error'):
+                                resp_ok = False
+                        except ValueError:
+                            resp_ok = False
+                        if resp.status_code != 200:
+                            resp_ok = False
+
+                        if not resp_ok:
                             flash(f"Bad Response from 'update', '{resp.text}', status: {resp.status_code}")
                     except Exception as e:
                         data['error'] += f"Unexpected Error from 'update' Error: {str(e)} \n\r"
                         raise e
             else:
-                #  #### for testing
-                # if 'williesworkshop' not in request.host:
-                #     rec.host = 'http://127.0.0.1:5000'
-
                 # ping host for current device state
+                # import pdb;pdb.set_trace()
+                if TESTING_HOST:
+                    rec.host = TESTING_HOST
                 resp = requests.get(path.join(rec.host,URL_PREFIX,'status.json'))
                 if resp and resp.status_code == 200:
                     if resp.text:
@@ -223,7 +233,7 @@ def get(uuid = None):
         except Exception as e:
             data['error'] = f'Error: Not able to load data. ({str(e)})\n\r'
     
-    if data['error']:
+    if data.get('error'):
         flash(data['error'])
     return render_template('lights_home.html',data=data)
 
