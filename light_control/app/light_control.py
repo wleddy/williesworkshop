@@ -91,8 +91,8 @@ async def handle_button():
         save_status_to_file(json.dumps(data))
         
 
-async def manage_mode():
-    global delay_time, blink_delay, blink_times, relay_pin, light_on
+def set_mode()->bool:
+    global light_on
     try:
         if not connection.is_connected():
             connection.connect()
@@ -132,7 +132,14 @@ async def manage_mode():
     elif state == 3 and not timer_on:
         light_on = False
         new_mode = -1 #set back to auto
+        
+    return new_mode
     
+    
+async def manage_mode():
+    global delay_time, blink_delay, blink_times, relay_pin, light_on
+    new_mode = set_mode()
+    data = json.loads(get_status_from_file())
     if light_on:
         delay_time = 0
         relay_pin.value(1)
@@ -209,7 +216,8 @@ def update(data):
     content = add_light_state(content)
     return json.dumps(content)
 
-def add_light_state(content: str | dict)->str:
+def add_light_state(content: str | dict)->dict:
+    set_mode()
     if isinstance(content,str):
         content = json.loads(content)
     content.update({"light_on":light_on})
