@@ -11,7 +11,6 @@ import os
 import time
 
 class Settings:
-    
     def __init__(self,debug=False):
         self.debug = debug
         self.UTC_offset = -8
@@ -22,6 +21,12 @@ class Settings:
         dest = '/api/check_file_version'
         return f'{self.host}{dest}'
     
+    
 
+    @property    
+    def log_export_url(self):
+        #URL for reporting results
+        dest = '/api/log'
+        return f'{self.host}{dest}'
 
 settings = Settings()
