@@ -18,6 +18,7 @@ PRIMARY_TABLE = models.LightControl
 URL_PREFIX = 'lights'
 TESTING_DATA = 'instance/light_control.json'
 TESTING_HOST = 'http://192.168.10.115:80'
+TESTING_HOST = ''
 
 mod = Blueprint('lights',__name__, 
                 template_folder='templates/light_control/', 
