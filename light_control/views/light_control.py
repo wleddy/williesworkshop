@@ -68,7 +68,7 @@ def edit(rec_id=None):
         view.update(save_after_update=True)
         if view.success:
             return redirect(g.listURL)
-    flash(f'{request.remote_addr=}')
+
     # otherwise send the list...
     return view.render()
 
